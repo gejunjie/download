@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Message;
 
 import com.example.hehedownload.data.DownloadData;
+import com.example.hehedownload.data.Ranges;
 import com.example.hehedownload.db.Db;
 import com.example.hehedownload.net.HttpManager;
 import com.example.hehedownload.utils.Utils;
@@ -15,10 +16,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.Response;
 
-import static com.example.hehedownload.data.Const.PROGRESS;
-import static com.example.hehedownload.data.Const.START;
+import static com.example.hehedownload.data.Consts.PROGRESS;
+import static com.example.hehedownload.data.Consts.START;
+import static com.example.hehedownload.data.Consts.PROGRESS;
 
 public class FileTask implements Runnable {
 
@@ -50,7 +53,7 @@ public class FileTask implements Runnable {
                 }
                 saveRangeFile();
             } else {
-                Response response = OkHttpManager.getInstance().initRequest(url);
+                Response response = HttpManager.getInstance().initRequest(url);
                 if (response != null && response.isSuccessful()) {
                     if (Utils.isSupportRange(response)) {
                         prepareRangeFile(response);
