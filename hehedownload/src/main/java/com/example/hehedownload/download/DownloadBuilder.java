@@ -15,22 +15,22 @@ public class DownloadBuilder {
         this.context = context.getApplicationContext();
     }
 
-    public OkDownBuilder url(String url){
+    public DownloadBuilder url(String url){
         this.url = url;
         return this;
     }
 
-    public OkDownBuilder path(String path){
+    public DownloadBuilder path(String path){
         this.path = path;
         return this;
     }
 
-    public OkDownBuilder name(String name){
+    public DownloadBuilder name(String name){
         this.name = name;
         return this;
     }
 
-    public OkDownBuilder childTaskCount(String childTaskCount){
+    public DownloadBuilder childTaskCount(String childTaskCount){
         this.childTaskCount = childTaskCount;
         return this;
     }

@@ -8,11 +8,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadPool {
     //CPU核心数
-    private int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
     //核心线程数
-    private int CORE_POOL_SIZE = 3;
+    private static final int CORE_POOL_SIZE = CPU_COUNT + 1;
     //最大线程数
-    private int MAX_POOL_SIZE = CPU_COUNT +1;
+    private static final int MAX_POOL_SIZE = CPU_COUNT * 2 +1;
 
     private long KEEP_ALIVE = 10L;
 
@@ -40,28 +40,6 @@ public class ThreadPool {
         private static final ThreadPool instance = new ThreadPool();
     }
 
-    public void setCorePoolSize(int corePoolSize){
-        if (corePoolSize == 0){
-            return;
-        }
-        CORE_POOL_SIZE = corePoolSize;
-    }
-
-    public void setMaxPoolSize(int maxPoolSize){
-        if (maxPoolSize == 0){
-            return;
-        }
-        MAX_POOL_SIZE =maxPoolSize;
-    }
-
-    public int getCorePoolSize() {
-        return CORE_POOL_SIZE;
-    }
-
-    public int getMaxPoolSize() {
-        return MAX_POOL_SIZE;
-    }
-
     public ThreadPoolExecutor getExecutor(){
         if (THREAD_POOL_EXECUTOR == null){
             return new ThreadPoolExecutor(CORE_POOL_SIZE,MAX_POOL_SIZE,
@@ -70,4 +48,25 @@ public class ThreadPool {
         }
         return THREAD_POOL_EXECUTOR;
     }
+    //    public void setCorePoolSize(int corePoolSize){
+//        if (corePoolSize == 0){
+//            return;
+//        }
+//        CORE_POOL_SIZE = corePoolSize;
+//    }
+//
+//    public void setMaxPoolSize(int maxPoolSize){
+//        if (maxPoolSize == 0){
+//            return;
+//        }
+//        MAX_POOL_SIZE =maxPoolSize;
+//    }
+
+    public int getCorePoolSize() {
+        return CORE_POOL_SIZE;
+    }
+//
+//    public int getMaxPoolSize() {
+//        return MAX_POOL_SIZE;
+//    }
 }
