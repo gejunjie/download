@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.example.hehedownload.data.DownloadData;
 
+import static com.example.hehedownload.data.Consts.PROGRESS;
+
 public class Db {
 
     private static final String DB_NAME = "db_okdown";
@@ -72,7 +74,13 @@ public class Db {
         return downloadData;
     }
 
-    public void updateProgress(int currentSize, float percentage, String url){
-
+    public void updateProgress(int currentSize, float percentage, int status, String url){
+        ContentValues values = new ContentValues();
+        if (status != PROGRESS){
+            values.put("current_length", currentSize);
+            values.put("percentage", percentage);
+        }
+        values.put("status", status);
+        database.update(DB_NAME, values, "url = ?", new String[]{url});
     }
 }

@@ -12,28 +12,59 @@ import com.example.hehedownload.net.HttpManager;
 import com.example.hehedownload.utils.Utils;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
+import static com.example.hehedownload.data.Consts.CANCEL;
+import static com.example.hehedownload.data.Consts.DESTROY;
 import static com.example.hehedownload.data.Consts.ERROR;
+import static com.example.hehedownload.data.Consts.PAUSE;
 import static com.example.hehedownload.data.Consts.PROGRESS;
 import static com.example.hehedownload.data.Consts.START;
 import static com.example.hehedownload.data.Consts.PROGRESS;
+import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
 public class FileTask implements Runnable {
 
-    private Handler mHandler;
+    private int EACH_TEMP_SIZE = 16;
+    private int TEMP_FILE_TOTAL_SIZE;//临时文件的总大小
+
+    private int BUFFER_SIZE = 4096;
+
+    private Context context;
+
+    private String url;
     private String path;
     private String name;
-    private Context context;
-    private int EACH_TEMP_SIZE = 16;
-    private int TEMP_FILE_TOTAL_SIZE;
-    private String url;
+    private int childTaskCount;
+    private Handler handler;
 
+    private boolean IS_PAUSE;
+    private boolean IS_DESTROY;
+    private boolean IS_CANCEL;
+    private ArrayList<Call> callList;
+
+    private int tempChildTaskCount;
+
+    public FileTask(Context context, DownloadData downloadData, Handler handler) {
+        this.context = context;
+        this.url = downloadData.getUrl();
+        this.path = downloadData.getPath();
+        this.name = downloadData.getName();
+        this.childTaskCount = downloadData.getChildTaskCount();
+        this.handler = handler;
+
+        TEMP_FILE_TOTAL_SIZE = EACH_TEMP_SIZE * childTaskCount;
+    }
 
     @Override
     public void run() {
@@ -124,7 +155,151 @@ public class FileTask implements Runnable {
         bundle.putString("lastModify", lastModify);
         bundle.putBoolean("isSupportRange", isSupportRange);
         message.setData(bundle);
-        mHandler.sendMessage(message);
+        handler.sendMessage(message);
+    }
+
+    /**
+     * 读取保存的断点信息
+     *
+     * @param tempFile
+     * @return
+     */
+    public Ranges readDownloadRange(File tempFile) {
+        RandomAccessFile record = null;
+        FileChannel channel = null;
+        try {
+            record = new RandomAccessFile(tempFile, "rws");
+            channel = record.getChannel();
+            MappedByteBuffer buffer = channel.map(READ_WRITE, 0, TEMP_FILE_TOTAL_SIZE);
+            long[] startByteArray = new long[childTaskCount];
+            long[] endByteArray = new long[childTaskCount];
+            for (int i = 0; i < childTaskCount; i++) {
+                startByteArray[i] = buffer.getLong();
+                endByteArray[i] = buffer.getLong();
+            }
+            return new Ranges(startByteArray, endByteArray);
+        } catch (Exception e) {
+            onError(e.toString());
+        } finally {
+            Utils.closeStream(channel);
+            Utils.closeStream(record);
+        }
+        return null;
+    }
+
+    /**
+     * 分段保存文件
+     *
+     * @param response
+     * @param index
+     * @param range
+     * @param saveFile
+     * @param tempFile
+     */
+    private void startSaveRangeFile(Response response, int index, Ranges range, File saveFile, File tempFile) {
+        RandomAccessFile saveRandomAccessFile = null;
+        FileChannel saveChannel = null;
+        InputStream inputStream = null;
+
+        RandomAccessFile tempRandomAccessFile = null;
+        FileChannel tempChannel = null;
+
+        try {
+            saveRandomAccessFile = new RandomAccessFile(saveFile, "rws");
+            saveChannel = saveRandomAccessFile.getChannel();
+            MappedByteBuffer saveBuffer = saveChannel.map(READ_WRITE, range.start[index], range.end[index] - range.start[index] + 1);
+
+            tempRandomAccessFile = new RandomAccessFile(tempFile, "rws");
+            tempChannel = tempRandomAccessFile.getChannel();
+            MappedByteBuffer tempBuffer = tempChannel.map(READ_WRITE, 0, TEMP_FILE_TOTAL_SIZE);
+
+            inputStream = response.body().byteStream();
+            int len;
+            byte[] buffer = new byte[BUFFER_SIZE];
+
+            while ((len = inputStream.read(buffer)) != -1) {
+                if (IS_CANCEL) {
+                    handler.sendEmptyMessage(CANCEL);
+                    callList.get(index).cancel();
+                    break;
+                }
+
+                saveBuffer.put(buffer, 0, len);
+                tempBuffer.putLong(index * EACH_TEMP_SIZE, tempBuffer.getLong(index * EACH_TEMP_SIZE) + len);
+                onProgress(len);
+
+                if (IS_DESTROY) {
+                    handler.sendEmptyMessage(DESTROY);
+                    callList.get(index).cancel();
+                    break;
+                }
+
+                if (IS_PAUSE) {
+                    handler.sendEmptyMessage(PAUSE);
+                    callList.get(index).cancel();
+                    break;
+                }
+            }
+            addCount();
+        } catch (Exception e) {
+            onError(e.toString());
+        } finally {
+            Utils.closeStream(saveRandomAccessFile);
+            Utils.closeStream(saveChannel);
+            Utils.closeStream(inputStream);
+            Utils.closeStream(tempRandomAccessFile);
+            Utils.closeStream(tempChannel);
+            Utils.closeStream(response);
+        }
+    }
+
+    private synchronized void addCount() {
+        ++tempChildTaskCount;
+    }
+
+    private void saveCommonFile(Response response) {
+        InputStream inputStream = null;
+        FileOutputStream outputStream = null;
+
+        try {
+
+            long fileLength = response.body().contentLength();
+            onStart(fileLength, 0, "", false);
+
+            Utils.deleteFile(path, name);
+
+            File file = Utils.createFile(path, name);
+            if (file == null) {
+                return;
+            }
+
+            inputStream = response.body().byteStream();
+            outputStream = new FileOutputStream(file);
+
+            int len;
+            byte[] buffer = new byte[BUFFER_SIZE];
+            while ((len = inputStream.read(buffer)) != -1) {
+                if (IS_CANCEL) {
+                    handler.sendEmptyMessage(CANCEL);
+                    break;
+                }
+
+                if (IS_DESTROY) {
+                    break;
+                }
+
+                outputStream.write(buffer, 0, len);
+                onProgress(len);
+            }
+
+            outputStream.flush();
+        } catch (Exception e) {
+            onError(e.toString());
+        } finally {
+            Utils.closeStream(inputStream);
+            Utils.closeStream(outputStream);
+            Utils.closeStream(response);
+        }
     }
 
     public void onProgress(int length) {
