@@ -19,6 +19,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
+import static com.example.hehedownload.data.Consts.ERROR;
 import static com.example.hehedownload.data.Consts.PROGRESS;
 import static com.example.hehedownload.data.Consts.START;
 import static com.example.hehedownload.data.Consts.PROGRESS;
@@ -42,7 +43,7 @@ public class FileTask implements Runnable {
             DownloadData data = Db.getInstance(context).getData(url);
             if (Utils.isFileExists(saveFile) && Utils.isFileExists(tempFile)
                     && data != null && data.getStatus() != PROGRESS) {
-                Response response = OkHttpManager.getInstance().initRequest(url, data.getLastModify());
+                Response response = HttpManager.getInstance().initRequest(url, data.getLastModify());
                 if (response != null && response.isSuccessful() && Utils.isNotServerFileChanged(response)) {
                     //服务器端文件没更新,准备下载,回调onstart
                     TEMP_FILE_TOTAL_SIZE = EACH_TEMP_SIZE * data.getChildTaskCount();
@@ -126,10 +127,29 @@ public class FileTask implements Runnable {
         mHandler.sendMessage(message);
     }
 
-    public void onProgress(int length){
+    public void onProgress(int length) {
         Message message = Message.obtain();
         message.what = PROGRESS;
         message.arg1 = length;
-        mHandler.sendMessage(message);
+        handler.sendMessage(message);
+    }
+
+    public void onError(String msg) {
+        Message message = Message.obtain();
+        message.what = ERROR;
+        message.obj = msg;
+        handler.sendMessage(message);
+    }
+
+    public void pause() {
+        IS_PAUSE = true;
+    }
+
+    public void cancel() {
+        IS_CANCEL = true;
+    }
+
+    public void destroy() {
+        IS_DESTROY = true;
     }
 }
