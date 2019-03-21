@@ -2,7 +2,7 @@ package com.example.hehedownload.download;
 
 import android.content.Context;
 
-public class OkDownBuilder {
+public class DownloadBuilder {
 
     private String url;
     private String path;           //下载路径
@@ -11,7 +11,7 @@ public class OkDownBuilder {
 
     private Context context;
 
-    public OkDownBuilder(Context context){
+    public DownloadBuilder(Context context){
         this.context = context.getApplicationContext();
     }
 

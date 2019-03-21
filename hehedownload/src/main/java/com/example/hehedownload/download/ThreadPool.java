@@ -9,10 +9,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ThreadPool {
     //CPU核心数
     private int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-
+    //核心线程数
     private int CORE_POOL_SIZE = 3;
-
-    private int MAX_POOL_SIZE = 20;
+    //最大线程数
+    private int MAX_POOL_SIZE = CPU_COUNT +1;
 
     private long KEEP_ALIVE = 10L;
 
@@ -32,12 +32,12 @@ public class ThreadPool {
 
     }
 
-    public ThreadPool getInstance(){
+    public static ThreadPool getInstance(){
         return ThreadPoolHolder.instance;
     }
 
-    public static class ThreadPoolHolder{
-        public static ThreadPool instance = new ThreadPool();
+    private static class ThreadPoolHolder{
+        private static final ThreadPool instance = new ThreadPool();
     }
 
     public void setCorePoolSize(int corePoolSize){

@@ -30,7 +30,6 @@ import static com.example.hehedownload.data.Consts.ERROR;
 import static com.example.hehedownload.data.Consts.PAUSE;
 import static com.example.hehedownload.data.Consts.PROGRESS;
 import static com.example.hehedownload.data.Consts.START;
-import static com.example.hehedownload.data.Consts.PROGRESS;
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
 public class FileTask implements Runnable {
