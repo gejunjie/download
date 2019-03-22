@@ -252,6 +252,7 @@ public class FileTask implements Runnable {
         }
     }
 
+    //Todo 这里是否可以用AtomicInteger
     private synchronized void addCount() {
         ++tempChildTaskCount;
     }

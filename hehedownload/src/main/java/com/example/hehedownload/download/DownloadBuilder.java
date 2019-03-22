@@ -7,7 +7,7 @@ public class DownloadBuilder {
     private String url;
     private String path;           //下载路径
     private String name;           //文件名
-    private String childTaskCount; //线程数
+    private int childTaskCount; //线程数
 
     private Context context;
 
@@ -30,9 +30,16 @@ public class DownloadBuilder {
         return this;
     }
 
-    public DownloadBuilder childTaskCount(String childTaskCount){
+    public DownloadBuilder childTaskCount(int childTaskCount){
         this.childTaskCount = childTaskCount;
         return this;
+    }
+    public DownloadManager build() {
+        DownloadManager downloadManager = DownloadManager.getInstance(context);
+
+        downloadManager.init(url,path,name,childTaskCount);
+
+        return downloadManager;
     }
 }
 

@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ThreadPool {
+public final class ThreadPool {
     //CPU核心数
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
     //核心线程数
@@ -20,7 +20,7 @@ public class ThreadPool {
 
     private ThreadFactory mThreadFactory = new ThreadFactory() {
 
-        private final AtomicInteger mCount = new AtomicInteger();
+        private final AtomicInteger mCount = new AtomicInteger(1);
 
         @Override
         public Thread newThread(Runnable r) {

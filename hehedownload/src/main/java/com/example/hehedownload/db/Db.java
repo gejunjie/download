@@ -11,19 +11,22 @@ import static com.example.hehedownload.data.Consts.PROGRESS;
 
 public class Db {
 
-    private static final String DB_NAME = "db_okdown";
+    private static final String DB_NAME = "benboerboluo";
 
     private static final int VERSION = 2;
 
-    private String TABLE_NAME_OKDOWN = "okdown_info";
+    private String TABLE_NAME_DOWNLOAD = "download_info";
+//    volatlie防止指令重排序 可能会重排序为1->3->2
+//    memory = allocate（）;    // 1.分配对象的内存空间
+//    ctorInstance（memory）;    // 2.初始化对象
+//    instance = memory;    // 3.设置instance指向刚才分配的内存地址
+    private volatile static Db db;
 
-    private static Db db;
-
-    private SQLiteDatabase database;
+    private SQLiteDatabase sqldb;
 
     private Db(Context context){
         DbOpenHelper dbOpenHelper = new DbOpenHelper(context,DB_NAME,null,VERSION);
-        database = dbOpenHelper.getWritableDatabase();
+        sqldb = dbOpenHelper.getWritableDatabase();
     }
 
     public static Db getInstance(Context context){
@@ -53,12 +56,18 @@ public class Db {
         values.put("date",data.getDate());
         values.put("lastModify",data.getLastModify());
 
-        database.insert(DB_NAME,null,values);
+        sqldb.insert(DB_NAME,null,values);
     }
 
     public DownloadData getData(String url){
-        Cursor cursor = database.query(DB_NAME, null, "url = ?", new String[]{url},
-                null, null, null);
+
+        Cursor cursor = sqldb.query(TABLE_NAME_DOWNLOAD, null, "url = ?",
+                new String[]{url}, null, null, null);
+
+        if (!cursor.moveToFirst()) {
+            return null;
+        }
+
         DownloadData downloadData = new DownloadData();
         downloadData.setUrl(cursor.getString(cursor.getColumnIndex("url")));
         downloadData.setPath(cursor.getString(cursor.getColumnIndex("path")));
@@ -81,6 +90,6 @@ public class Db {
             values.put("percentage", percentage);
         }
         values.put("status", status);
-        database.update(DB_NAME, values, "url = ?", new String[]{url});
+        sqldb.update(DB_NAME, values, "url = ?", new String[]{url});
     }
 }

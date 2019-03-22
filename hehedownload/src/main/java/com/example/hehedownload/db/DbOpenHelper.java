@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DbOpenHelper extends SQLiteOpenHelper {
 
     public static final String CTEATE_DOWNLOAD_INFO = "create table download_info ("
-            +"id integer primary key auto increment,"
+            +"id integer primary key autoincrement,"
             +"url text,"
             +"path text,"
             +"child_task_count integer,"
@@ -25,12 +25,16 @@ public class DbOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-
+        db.execSQL(CTEATE_DOWNLOAD_INFO);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        switch (oldVersion){
+            case 1 : db.execSQL("alter table download_info add column status integer");
 
+            default:
+        }
     }
 
 }
