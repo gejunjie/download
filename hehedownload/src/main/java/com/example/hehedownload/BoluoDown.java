@@ -7,9 +7,9 @@ import com.example.hehedownload.download.DownloadBuilder;
 /**
  * 入口类
  */
-public class OkDown {
+public class BoluoDown {
 
-    public static DownloadBuilder newInstance(Context context){
+    public static DownloadBuilder init(Context context){
         return new DownloadBuilder(context);
     }
 }

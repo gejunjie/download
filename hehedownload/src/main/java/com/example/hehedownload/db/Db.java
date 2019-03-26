@@ -14,7 +14,7 @@ public class Db {
     private static final String DB_NAME = "benboerboluo";
 
     private static final int VERSION = 2;
-
+    //数据库表名
     private String TABLE_NAME_DOWNLOAD = "download_info";
 //    volatlie防止指令重排序 可能会重排序为1->3->2
 //    memory = allocate（）;    // 1.分配对象的内存空间
@@ -48,15 +48,15 @@ public class Db {
         values.put("url",data.getUrl());
         values.put("path",data.getPath());
         values.put("name",data.getName());
-        values.put("currentLength",data.getCurrentLength());
-        values.put("totalLength",data.getTotalLength());
+        values.put("current_length",data.getCurrentLength());
+        values.put("total_length",data.getTotalLength());
         values.put("percentage",data.getPercentage());
         values.put("status",data.getStatus());
-        values.put("childTaskCount",data.getChildTaskCount());
+        values.put("child_task_count",data.getChildTaskCount());
         values.put("date",data.getDate());
-        values.put("lastModify",data.getLastModify());
+        values.put("last_modify",data.getLastModify());
 
-        sqldb.insert(DB_NAME,null,values);
+        sqldb.insert(TABLE_NAME_DOWNLOAD,null,values);
     }
 
     public DownloadData getData(String url){
@@ -90,6 +90,13 @@ public class Db {
             values.put("percentage", percentage);
         }
         values.put("status", status);
-        sqldb.update(DB_NAME, values, "url = ?", new String[]{url});
+        sqldb.update(TABLE_NAME_DOWNLOAD, values, "url = ?", new String[]{url});
+    }
+
+    /**
+     * 删除下载信息
+     */
+    public void deleteData(String url) {
+        sqldb.delete(TABLE_NAME_DOWNLOAD, "url = ?", new String[]{url});
     }
 }

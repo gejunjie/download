@@ -171,11 +171,11 @@ public class DownloadManager {
         DownloadProgressHandler progressHandler = new DownloadProgressHandler(mContext, downloadData, downloadCallback);
         FileTask fileTask = new FileTask(mContext, downloadData, progressHandler.getHandler());
         progressHandler.setFileTask(fileTask);
-
-        downloadDataMap.put(downloadData.getUrl(),downloadData);
-        callbackMap.put(downloadData.getUrl(),downloadCallback);
-        fileTaskMap.put(downloadData.getUrl(),fileTask);
-        progressHandlerMap.put(downloadData.getUrl(),progressHandler);
+        String key = downloadData.getUrl();
+        downloadDataMap.put(key,downloadData);
+        callbackMap.put(key,downloadCallback);
+        fileTaskMap.put(key,fileTask);
+        progressHandlerMap.put(key,progressHandler);
 
         ThreadPool.getInstance().getExecutor().execute(fileTask);
 

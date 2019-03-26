@@ -7,7 +7,8 @@ public class DownloadBuilder {
     private String url;
     private String path;           //下载路径
     private String name;           //文件名
-    private int childTaskCount; //线程数
+    private int childTaskCount;
+    //线程数
 
     private Context context;
 

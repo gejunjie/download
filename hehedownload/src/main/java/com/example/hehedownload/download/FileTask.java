@@ -71,6 +71,7 @@ public class FileTask implements Runnable {
             File saveFile = new File(path, name);
             File tempFile = new File(path, name + ".temp");
             DownloadData data = Db.getInstance(context).getData(url);
+            //文件已经开始下载，本地有部分文件
             if (Utils.isFileExists(saveFile) && Utils.isFileExists(tempFile)
                     && data != null && data.getStatus() != PROGRESS) {
                 Response response = HttpManager.getInstance().initRequest(url, data.getLastModify());
@@ -84,6 +85,7 @@ public class FileTask implements Runnable {
                 }
                 saveRangeFile();
             } else {
+            //文件还没进行下载
                 Response response = HttpManager.getInstance().initRequest(url);
                 if (response != null && response.isSuccessful()) {
                     if (Utils.isSupportRange(response)) {
@@ -104,7 +106,57 @@ public class FileTask implements Runnable {
      * @param response
      */
     private void prepareRangeFile(Response response) {
+        RandomAccessFile saveRandomAccessFile = null;
+        RandomAccessFile tempRandomAccessFile = null;
+        FileChannel tempChannel = null;
+        File saveFile;
+        File tempFile;
 
+        try {
+
+            saveFile = new File(path, name);
+            tempFile = new File(path, name + ".temp");
+
+            long fileLength = response.body().contentLength();
+            onStart(fileLength, 0, Utils.getLastModify(response), true);
+
+            Db.getInstance(context).deleteData(url);
+            Utils.deleteFile(saveFile, tempFile);
+
+            saveFile = Utils.createFile(path, name);
+            tempFile = Utils.createFile(path, name + ".temp");
+
+            saveRandomAccessFile = new RandomAccessFile(saveFile, "rws");
+            saveRandomAccessFile.setLength(fileLength);
+
+            tempRandomAccessFile = new RandomAccessFile(tempFile, "rws");
+            tempRandomAccessFile.setLength(TEMP_FILE_TOTAL_SIZE);
+
+            tempChannel = tempRandomAccessFile.getChannel();
+            MappedByteBuffer buffer = tempChannel.map(READ_WRITE, 0, TEMP_FILE_TOTAL_SIZE);
+
+            long start;
+            long end;
+            int eachSize = (int) (fileLength / childTaskCount);
+            for (int i = 0; i < childTaskCount; i++) {
+                if (i == childTaskCount - 1) {
+                    start = i * eachSize;
+                    end = fileLength - 1;
+                } else {
+                    start = i * eachSize;
+                    end = (i + 1) * eachSize - 1;
+                }
+                buffer.putLong(start);
+                buffer.putLong(end);
+            }
+        } catch (Exception e) {
+            onError(e.toString());
+        } finally {
+            Utils.closeStream(saveRandomAccessFile);
+            Utils.closeStream(tempRandomAccessFile);
+            Utils.closeStream(tempChannel);
+            Utils.closeStream(response);
+        }
     }
 
     /**
